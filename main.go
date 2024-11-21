@@ -4,6 +4,7 @@ import (
 	"fmt" // dakchi dial input output
 	"net" // sockets rak fahm
 	"os"
+	"strings"
 )
 
 func main() {
@@ -27,24 +28,39 @@ func main() {
 		}
 
 		// Handle the connection in a separate goroutine
-		go handleConnection(conn)
+		clientAddr := conn.RemoteAddr().String()
+		fmt.Printf("Connection established with %s\n", clientAddr)
+
+		requestBuffer := make([]byte, 1024)
+		n, err := conn.Read(requestBuffer)
+		if err != nil {
+			httpHandleError(err)
+		}
+		request := string(requestBuffer[:n])
+		fmt.Println(string(request))
+
+		args := strings.Split(request, " ")
+		method := args[0]
+		switch method {
+		case "GET":
+			httpGet(conn, args[1])
+		}
 	}
 }
 
-// fach tzid tkbr 4atwli module bo7do
-func handleConnection(conn net.Conn) {
+func httpGet(conn net.Conn, path string) {
 	defer conn.Close()
 
-	clientAddr := conn.RemoteAddr().String()
-	fmt.Printf("Connection established with %s\n", clientAddr)
+	content, err := os.ReadFile("./" + path)
+	if err != nil {
+		httpHandleError(err)
+	}
+	header := "HTTP/2 200 OK\r\n" +
+		"Content-Type: text/plain\r\n\n" +
+		string(content)
+	conn.Write([]byte(header))
+}
 
-	// 4a brikol ta t7ydha
-	response := "HTTP/1.1 200 OK\r\n" +
-		"Content-Type: text/plain\r\n" +
-		"Content-Length: 13\r\n" +
-		"\r\n" +
-		"Hello, World!"
-	conn.Write([]byte(response))
-
-	fmt.Printf("Response sent to %s\n", clientAddr)
+func httpHandleError(err error) {
+	fmt.Println("error occured", err)
 }
