@@ -1,10 +1,9 @@
-package gover
+package main
 
 import (
 	"fmt" // dakchi dial input output
 	"net" // sockets rak fahm
 	"os"
-	"strings"
 )
 
 func main() {
@@ -36,15 +35,16 @@ func main() {
 		if err != nil {
 			httpHandleError(err)
 		}
-		request := string(requestBuffer[:n])
-		fmt.Println(string(request))
-
-		args := strings.Split(request, " ")
-		method := args[0]
-		switch method {
-		case "GET":
-			httpGet(conn, args[1])
-		}
+		req := string(requestBuffer[:n])
+		request := ParseHTTPRequest(req)
+		fmt.Println(request.method)
+		fmt.Println(request.host)
+		//args := strings.Split(request, " ")
+		//method := args[0]
+		//switch method {
+		//case "GET":
+		//	httpGet(conn, args[1])
+		//}
 	}
 }
 
