@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt" // dakchi dial input output
-	"net" // sockets rak fahm
+	"fmt"
+	"net"
 	"os"
 )
 
@@ -26,41 +26,36 @@ func main() {
 			continue
 		}
 
-		// Handle the connection in a separate goroutine
 		clientAddr := conn.RemoteAddr().String()
-		fmt.Printf("Connection established with %s\n", clientAddr)
 
 		requestBuffer := make([]byte, 1024)
 		n, err := conn.Read(requestBuffer)
 		if err != nil {
-			httpHandleError(err)
+			fmt.Println(clientAddr, "NONE", "NONE", 500)
 		}
 		req := string(requestBuffer[:n])
 		request := ParseHTTPRequest(req)
-		fmt.Println(request.method)
-		fmt.Println(request.host)
-		//args := strings.Split(request, " ")
-		//method := args[0]
-		//switch method {
-		//case "GET":
-		//	httpGet(conn, args[1])
-		//}
+		
+		var statusCode int
+
+		switch request.method {
+			case "GET": statusCode = httpGet(conn, request.resource) 
+		}
+
+		fmt.Println(clientAddr, request.method, request.resource, statusCode)
 	}
 }
 
-func httpGet(conn net.Conn, path string) {
+func httpGet(conn net.Conn, path string) int {
 	defer conn.Close()
 
 	content, err := os.ReadFile("./" + path)
 	if err != nil {
-		httpHandleError(err)
+		return 404
 	}
-	header := "HTTP/2 200 OK\r\n" +
-		"Content-Type: text/plain\r\n\n" +
+	header := "HTTP/2 200 OK\r\n\n" +
 		string(content)
 	conn.Write([]byte(header))
-}
 
-func httpHandleError(err error) {
-	fmt.Println("error occured", err)
+	return 200
 }
